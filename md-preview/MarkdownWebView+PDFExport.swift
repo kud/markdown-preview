@@ -390,7 +390,6 @@ private final class ExportPrintPanel: NSPrintPanel {
     private weak var printSheetController: NSWindowController?
     private var isObservingPrintSheet = false
     private var isShowingFileSavePanel = false
-    private var didRemoveTopPocket = false
 
     /// `initialFormat` lets Export as PDF… open on PDF while still offering the
     /// other formats, rather than reopening on whatever was last exported.
@@ -422,7 +421,6 @@ private final class ExportPrintPanel: NSPrintPanel {
         completionHandler handler: ((NSPrintPanel.Result) -> Void)? = nil
     ) {
         self.parentWindow = parentWindow
-        didRemoveTopPocket = false
         observePrintSheet()
 
         super.beginSheet(using: printInfo, on: parentWindow) { [weak self] result in
@@ -453,7 +451,6 @@ private final class ExportPrintPanel: NSPrintPanel {
         printSheetWindow = nil
         printSheetController = nil
         isShowingFileSavePanel = false
-        didRemoveTopPocket = false
         isObservingPrintSheet = false
     }
 
@@ -463,7 +460,7 @@ private final class ExportPrintPanel: NSPrintPanel {
               window.sheetParent === parentWindow,
               let controller = window.windowController,
               NSStringFromClass(type(of: controller))
-                == "PMPrintPanelController"
+                .hasSuffix("PMPrintPanelController")
         else { return }
 
         printSheetWindow = window
@@ -482,48 +479,91 @@ private final class ExportPrintPanel: NSPrintPanel {
     }
 
     private func configure(controller: NSWindowController) {
-        if let scrollView = privateObject(
-            named: "printOptionsScrollView", on: controller) as? NSScrollView {
-            removeTopPocketIfNeeded(from: scrollView, controller: controller)
+        if let printerSection = privateObject(
+            named: "printersSectionStackView", on: controller) as? NSView,
+           printerSection.superview != nil {
+            let scrollView = privateObject(
+                named: "printOptionsScrollView",
+                on: controller
+            ) as? NSScrollView ?? printerSection.enclosingScrollView
+            removePrinterSection(
+                printerSection,
+                from: scrollView,
+                controller: controller
+            )
         }
         configureSaveButton(on: controller)
     }
 
-    private func removeTopPocketIfNeeded(
-        from scrollView: NSScrollView,
+    private func removePrinterSection(
+        _ printerSection: NSView,
+        from scrollView: NSScrollView?,
         controller: NSWindowController
     ) {
-        guard !didRemoveTopPocket,
-              let printerSection = privateObject(
-                named: "printersSectionStackView", on: controller) as? NSView
-        else { return }
-
-        let collapsedTopInset = max(
-            0,
-            scrollView.additionalSafeAreaInsets.top
-                - printerSection.frame.height
+        let legacyPocket = nearestPocketAncestor(
+            of: printerSection,
+            stoppingAt: scrollView
         )
 
-        // PrintingUI separately registers this private view as the top
-        // `NSScrollView` pocket. Edge 1 is the button pocket and must remain
-        // intact for Save/Cancel.
-        guard destroyTopScrollPocket(
-            registeredFor: printerSection,
-            from: scrollView,
-            observer: controller
-        ) else { return }
+        // macOS 26 registers the section as the top NSScrollPocket. Older
+        // releases use a pocket too, but don't consistently expose the same
+        // edge lookup/destruction selectors. Use those selectors when present;
+        // otherwise remove the section's own pocket ancestor so its blur
+        // backdrop doesn't remain over the options view.
+        let removedPocket = scrollView.map {
+            destroyTopScrollPocket(
+                registeredFor: printerSection,
+                from: $0,
+                observer: controller
+            )
+        } ?? false
+        let removedHeight = removedPocket
+            ? printerSection.frame.height
+            : max(printerSection.frame.height, legacyPocket?.frame.height ?? 0)
+        let collapsedTopInset = scrollView.map {
+            max(0, $0.additionalSafeAreaInsets.top - removedHeight)
+        }
+        if !removedPocket {
+            NotificationCenter.default.removeObserver(
+                controller,
+                name: NSView.frameDidChangeNotification,
+                object: printerSection
+            )
+        }
 
-        let container = printerSection.superview
-        printerSection.removeFromSuperview()
+        let removedView = removedPocket
+            ? printerSection
+            : (legacyPocket ?? printerSection)
+        let container = removedView.superview
+        removedView.removeFromSuperview()
         container?.needsLayout = true
         container?.layoutSubtreeIfNeeded()
 
-        var optionsInsets = scrollView.additionalSafeAreaInsets
-        optionsInsets.top = collapsedTopInset
-        scrollView.additionalSafeAreaInsets = optionsInsets
-        scrollView.tile()
-        scrollView.layoutSubtreeIfNeeded()
-        didRemoveTopPocket = true
+        if let scrollView, let collapsedTopInset {
+            var optionsInsets = scrollView.additionalSafeAreaInsets
+            optionsInsets.top = collapsedTopInset
+            scrollView.additionalSafeAreaInsets = optionsInsets
+            scrollView.tile()
+            scrollView.layoutSubtreeIfNeeded()
+        } else {
+            controller.window?.contentView?.needsLayout = true
+            controller.window?.contentView?.layoutSubtreeIfNeeded()
+        }
+    }
+
+    private func nearestPocketAncestor(
+        of view: NSView,
+        stoppingAt scrollView: NSScrollView?
+    ) -> NSView? {
+        var ancestor = view.superview
+        while let candidate = ancestor, candidate !== scrollView {
+            if NSStringFromClass(type(of: candidate))
+                .localizedCaseInsensitiveContains("pocket") {
+                return candidate
+            }
+            ancestor = candidate.superview
+        }
+        return nil
     }
 
     private func configureSaveButton(on controller: NSWindowController) {
