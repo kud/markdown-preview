@@ -17,17 +17,20 @@
 // The numbers below were measured off Apple's own Create PDF icon as rendered in
 // that list, so ours line up 1:1:
 //
-//   plate        28x28pt, corner radius 8pt, systemGray (#8E8E93)
-//   glyph        white, fitted to a centred 14pt box (50% of the plate)
+//   plate        26x26pt, corner radius 8pt, vertical gradient #B4B4B9 -> #8E8E93
+//   glyph        white, fitted to a centred 14pt box
 //   canvas       32x32pt, plate centred — the list draws at natural size and
 //                does not upscale, so the canvas has to be the full slot
 //
-// On the plate colour: the list composites these icons slightly darker than
-// authored — a flat 19/255 per channel, confirmed by authoring two different greys
-// and measuring both. Apple's tiles read #7B7B81 on screen, i.e. exactly
-// systemGray minus that offset, so authoring plain systemGray is what lands on
-// their rendered colour. Don't "correct" this to #7B7B81 or the plates come out
-// visibly darker than Apple's.
+// The plate is not a flat fill. Sampling a column down Apple's tiles gives ~#B4B4B9
+// at the top falling to systemGray #8E8E93 about 60% of the way down and staying
+// there — a subtle top-lit sheen. Create PDF and Convert Image measure identically,
+// so it is a system treatment rather than per-icon artwork. A flat systemGray plate
+// is noticeably duller side by side.
+//
+// When comparing against a screen capture, convert samples to sRGB first. Raw
+// bitmap components come back in the display's space, where Apple's #8E8E93 reads
+// as #7B7B81 — that gap is a colour-space artifact, not the list darkening icons.
 //
 // The glyphs themselves are Apple's real SF Symbol outlines, read from
 // NSSymbolImageRep's `outlinePath` rather than redrawn by hand.
@@ -53,14 +56,21 @@ let specs: [(file: String, symbol: String)] = [
 ]
 
 let canvas: CGFloat = 32
-let plateSide: CGFloat = 28
+let plateSide: CGFloat = 26
 let plateRadius: CGFloat = 8
 let glyphBox: CGFloat = 14
 let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
-// systemGray in light appearance. A single mid-grey, as Apple uses, so the one
-// static asset reads correctly against both the light and dark extension list.
-let plateColor = CGColor(colorSpace: sRGB,
-                         components: [0x8E/255.0, 0x8E/255.0, 0x93/255.0, 1])!
+// Bottom is systemGray in light appearance; the top is lifted to match Apple's
+// sheen. Greys either way, as Apple uses, so the one static asset reads correctly
+// against both the light and dark extension list.
+let plateBottom = CGColor(colorSpace: sRGB,
+                          components: [0x8E/255.0, 0x8E/255.0, 0x93/255.0, 1])!
+let plateTop = CGColor(colorSpace: sRGB,
+                       components: [0xB4/255.0, 0xB4/255.0, 0xB9/255.0, 1])!
+// Stops run bottom-to-top: flat systemGray across the lower 38%, then the ramp.
+let plateGradient = CGGradient(colorsSpace: sRGB,
+                               colors: [plateBottom, plateBottom, plateTop] as CFArray,
+                               locations: [0, 0.38, 1])!
 
 guard CommandLine.arguments.count == 2 else {
   FileHandle.standardError.write(
@@ -107,9 +117,14 @@ for spec in specs {
     ctx.scaleBy(x: CGFloat(scaleFactor), y: CGFloat(scaleFactor))
     ctx.setShouldAntialias(true)
 
-    ctx.setFillColor(plateColor)
+    ctx.saveGState()
     ctx.addPath(plateShape)
-    ctx.fillPath()
+    ctx.clip()
+    ctx.drawLinearGradient(plateGradient,
+                           start: CGPoint(x: plate.midX, y: plate.minY),
+                           end: CGPoint(x: plate.midX, y: plate.maxY),
+                           options: [])
+    ctx.restoreGState()
 
     ctx.setFillColor(CGColor(colorSpace: sRGB, components: [1, 1, 1, 1])!)
     ctx.addPath(glyph.cgPath)
