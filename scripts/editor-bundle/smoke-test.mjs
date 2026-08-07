@@ -316,6 +316,8 @@ check("inactive heading line receives visual offset class",
   inactiveHeadingHost.querySelector(".cm-md-heading-inactive") != null)
 check("blank source line before heading remains visible",
   inactiveHeadingHost.querySelector(".cm-md-line-collapsed") == null)
+check("heading receives compact spacing above a visible blank line",
+  inactiveHeadingHost.querySelector(".cm-md-heading-after-blank") != null)
 inactiveHeadingEditor.destroy()
 
 const headingFollowHost = dom.window.document.createElement("div")

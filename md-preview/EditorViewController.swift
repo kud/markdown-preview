@@ -329,10 +329,19 @@ final class EditorViewController: NSViewController, WKNavigationDelegate {
         #editor .cm-md-h4 { font-size: 1.41em; line-height: 1.08; }
         #editor .cm-md-h5 { font-size: 1.29em; line-height: 1.09; }
         #editor .cm-md-h6 { font-size: 1em; line-height: 1.24; }
+        /* A visible source blank already owns the gap before the heading;
+           retain the preview's small amount of extra breathing room. */
+        #editor .cm-md-h1.cm-md-heading-after-blank,
+        #editor .cm-md-h2.cm-md-heading-after-blank,
+        #editor .cm-md-h3.cm-md-heading-after-blank,
+        #editor .cm-md-h4.cm-md-heading-after-blank,
+        #editor .cm-md-h5.cm-md-heading-after-blank,
+        #editor .cm-md-h6.cm-md-heading-after-blank {
+            padding-top: 4px;
+        }
         /* A source line whose height another element owns collapses to
-           nothing: the blank separator before a heading (its padding-top
-           represents it), inactive code fence lines (the card transfers
-           their styling to the code lines), and a single blank opening the
+           nothing: inactive code fence lines (the card transfers their
+           styling to the code lines), and a single blank opening the
            document. Blank separators before other blocks resize instead —
            .cm-md-block-separator lines carry an inline height matching the
            preview margin of the block that follows. Additional blank lines

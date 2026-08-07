@@ -3110,6 +3110,16 @@ nonisolated enum MarkdownHTML {
     h4 { font-size: 1.41em; line-height: 1.08; }
     h5 { font-size: 1.29em; line-height: 1.09; }
     h6 { font-size: 1em; line-height: 1.24; }
+    /* An authored blank line already provides the heading's separation.
+       Keep only a small amount of extra breathing room above the title. */
+    .md-source-blank-line + h1,
+    .md-source-blank-line + h2,
+    .md-source-blank-line + h3,
+    .md-source-blank-line + h4,
+    .md-source-blank-line + h5,
+    .md-source-blank-line + h6 {
+        margin-top: 4px;
+    }
 
     a { color: var(--link); text-decoration: none; }
     a:hover { text-decoration: underline; }

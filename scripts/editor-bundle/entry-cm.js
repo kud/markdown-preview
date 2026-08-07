@@ -666,6 +666,7 @@ const HEADING_LINE = {}
 const for_ = (i) => Decoration.line({ class: "cm-md-h" + i })
 for (let i = 1; i <= 6; i++) HEADING_LINE[i] = for_(i)
 const inactiveHeadingLine = Decoration.line({ class: "cm-md-heading-inactive" })
+const headingAfterBlankLine = Decoration.line({ class: "cm-md-heading-after-blank" })
 // Inactive fence source lines collapse because the rendered code card owns
 // their height.
 const collapsedLine = Decoration.line({ class: "cm-md-line-collapsed" })
@@ -1067,12 +1068,18 @@ function buildDecorations(view) {
         const atx = name.match(/^ATXHeading(\d)$/)
         if (atx) {
           lineOnce(node.from, HEADING_LINE[+atx[1]])
+          if (blankRunBefore(node.from).count > 0) {
+            lineOnce(node.from, headingAfterBlankLine)
+          }
           if (!touchesLineOf(node.from)) lineOnce(node.from, inactiveHeadingLine)
           return
         }
         const setext = name.match(/^SetextHeading(\d)$/)
         if (setext) {
           lineOnce(node.from, HEADING_LINE[+setext[1]])
+          if (blankRunBefore(node.from).count > 0) {
+            lineOnce(node.from, headingAfterBlankLine)
+          }
           return
         }
         if (name === "HeaderMark") {
