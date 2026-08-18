@@ -37,6 +37,13 @@ final class SettingsModel {
         }
     }
 
+    var documentFont: DocumentFontSetting {
+        didSet {
+            guard !isRestoringExternalValues, documentFont != oldValue else { return }
+            appDelegate?.applyDocumentFontSetting(documentFont)
+        }
+    }
+
     var contentWidth: ContentWidthSetting {
         didSet {
             guard !isRestoringExternalValues, contentWidth != oldValue else { return }
@@ -116,6 +123,7 @@ final class SettingsModel {
         appearance = AppearanceMode.current
         contentWidth = ContentWidthSetting.current
         textSize = TextSizeSetting.current
+        documentFont = DocumentFontSetting.current
         isAlwaysOnTop = AlwaysOnTopPolicy.isEnabled
         sendsCrashReports = CrashReporter.isEnabled
         checksForUpdatesAutomatically = updater?.automaticallyChecksForUpdates ?? true
@@ -164,6 +172,7 @@ final class SettingsModel {
         appearance = AppearanceMode.current
         contentWidth = ContentWidthSetting.current
         textSize = TextSizeSetting.current
+        documentFont = DocumentFontSetting.current
         isAlwaysOnTop = AlwaysOnTopPolicy.isEnabled
         sendsCrashReports = CrashReporter.isEnabled
         if let updater { refreshUpdateSettings(from: updater) }
@@ -266,6 +275,12 @@ struct GeneralSettingsView: View {
             }
 
             Section {
+                Picker(L("Font"), selection: $model.documentFont) {
+                    ForEach(DocumentFontSetting.allCases, id: \.self) { setting in
+                        Text(setting.title).tag(setting)
+                    }
+                }
+
                 LabeledContent {
                     TextSizePicker(selection: $model.textSize)
                 } label: {
@@ -279,9 +294,9 @@ struct GeneralSettingsView: View {
                     }
                 }
             } header: {
-                Text(L("Layout"))
+                Text(L("Reading"))
             } footer: {
-                Text(L("Zooming a document window with ⌘+ and ⌘− changes this same size."))
+                Text(L("The font also applies to Quick Look previews. Zooming a document window with ⌘+ and ⌘− changes the text size."))
             }
 
             Section {
