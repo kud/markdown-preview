@@ -60,6 +60,15 @@ final class SettingsModel {
         }
     }
 
+    /// A plain stored default with nothing to apply: it is read the next time
+    /// a document opens, so unlike the settings above it has no fan-out.
+    var opensDocumentsInTabs: Bool {
+        didSet {
+            guard !isRestoringExternalValues, opensDocumentsInTabs != oldValue else { return }
+            TabOpeningPolicy.isEnabled = opensDocumentsInTabs
+        }
+    }
+
     var sendsCrashReports: Bool {
         didSet {
             guard !isRestoringExternalValues, sendsCrashReports != oldValue else { return }
@@ -117,6 +126,7 @@ final class SettingsModel {
         contentWidth = ContentWidthSetting.current
         textSize = TextSizeSetting.current
         isAlwaysOnTop = AlwaysOnTopPolicy.isEnabled
+        opensDocumentsInTabs = TabOpeningPolicy.isEnabled
         sendsCrashReports = CrashReporter.isEnabled
         checksForUpdatesAutomatically = updater?.automaticallyChecksForUpdates ?? true
         downloadsUpdatesAutomatically = updater?.automaticallyDownloadsUpdates ?? false
@@ -165,6 +175,7 @@ final class SettingsModel {
         contentWidth = ContentWidthSetting.current
         textSize = TextSizeSetting.current
         isAlwaysOnTop = AlwaysOnTopPolicy.isEnabled
+        opensDocumentsInTabs = TabOpeningPolicy.isEnabled
         sendsCrashReports = CrashReporter.isEnabled
         if let updater { refreshUpdateSettings(from: updater) }
     }
@@ -285,11 +296,17 @@ struct GeneralSettingsView: View {
             }
 
             Section {
-                Toggle(L("Always on Top"), isOn: $model.isAlwaysOnTop)
+                Toggle(isOn: $model.isAlwaysOnTop) {
+                    Text(L("Always on Top"))
+                    Text(L("Keeps every Markdown Preview window in front of other apps, including windows you open later. A window in full screen is left alone until it comes back out."))
+                }
+
+                Toggle(isOn: $model.opensDocumentsInTabs) {
+                    Text(L("Open documents in tabs"))
+                    Text(L("A file opened from Finder joins the front window as a tab instead of getting one of its own — Open in New Window still opens a window."))
+                }
             } header: {
                 Text(L("Windows"))
-            } footer: {
-                Text(L("Keeps every Markdown Preview window in front of other apps, including windows you open later. A window in full screen is left alone until it comes back out."))
             }
 
             Section {
