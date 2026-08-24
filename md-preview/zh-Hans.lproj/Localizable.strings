@@ -242,6 +242,15 @@
 "Failed to write CLI installer script: %@" = "无法写入 CLI 安装脚本：%@";
 "The bundled Markdown Preview CLI could not be found." = "找不到随附的 Markdown Preview CLI。";
 
+/* Settings — Reading */
+"Reading" = "阅读";
+"Font" = "字体";
+"System" = "系统";
+"Serif" = "衬线";
+"Rounded" = "圆体";
+"Monospace" = "等宽";
+"The font also applies to Quick Look previews. Zooming a document window with ⌘+ and ⌘− changes the text size." = "字体设置也会应用于“快速查看”预览。使用 ⌘+ 和 ⌘− 缩放文稿窗口会改变文字大小。";
+
 /* Settings — Windows */
 "Windows" = "窗口";
 "Keeps every Markdown Preview window in front of other apps, including windows you open later. A window in full screen is left alone until it comes back out." = "让所有 Markdown Preview 窗口始终显示在其他 App 前面，包括之后打开的窗口。窗口进入全屏时不会置顶，退出全屏后会恢复。";

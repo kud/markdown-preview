@@ -242,6 +242,15 @@
 "Failed to write CLI installer script: %@" = "Failed to write CLI installer script: %@";
 "The bundled Markdown Preview CLI could not be found." = "The bundled Markdown Preview CLI could not be found.";
 
+/* Settings — Reading */
+"Reading" = "Reading";
+"Font" = "Font";
+"System" = "System";
+"Serif" = "Serif";
+"Rounded" = "Rounded";
+"Monospace" = "Monospace";
+"The font also applies to Quick Look previews. Zooming a document window with ⌘+ and ⌘− changes the text size." = "The font also applies to Quick Look previews. Zooming a document window with ⌘+ and ⌘− changes the text size.";
+
 /* Settings — Windows */
 "Windows" = "Windows";
 "Keeps every Markdown Preview window in front of other apps, including windows you open later. A window in full screen is left alone until it comes back out." = "Keeps every Markdown Preview window in front of other apps, including windows you open later. A window in full screen is left alone until it comes back out.";
