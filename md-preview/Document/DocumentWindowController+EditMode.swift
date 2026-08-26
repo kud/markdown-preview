@@ -58,7 +58,7 @@ extension DocumentWindowController {
         button.toolTip = item.toolTip
         button.translatesAutoresizingMaskIntoConstraints = false
 
-        let container = NSView()
+        let container = ToolbarDragContainerView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(button)
         NSLayoutConstraint.activate([

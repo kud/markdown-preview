@@ -124,7 +124,22 @@ extension DocumentWindowController {
                          forSegment: 1)
         control.setToolTip(back, forSegment: 0)
         control.setToolTip(forward, forSegment: 1)
-        item.view = control
+        control.translatesAutoresizingMaskIntoConstraints = false
+
+        // Wrapped rather than used as the item view directly, so the cell
+        // around it stays window-drag chrome. The container takes the
+        // control's own size, leaving the toolbar's glass geometry untouched.
+        let container = ToolbarDragContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(control)
+        NSLayoutConstraint.activate([
+            control.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            control.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            control.topAnchor.constraint(equalTo: container.topAnchor),
+            control.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        item.view = container
         navigationItem = item
         navigationControl = control
         updateNavigationControl()
@@ -166,7 +181,7 @@ extension DocumentWindowController {
         button.toolTip = item.toolTip
         button.translatesAutoresizingMaskIntoConstraints = false
 
-        let container = NSView()
+        let container = ToolbarDragContainerView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(button)
         NSLayoutConstraint.activate([
@@ -202,7 +217,7 @@ extension DocumentWindowController {
         button.toolTip = item.toolTip
         button.translatesAutoresizingMaskIntoConstraints = false
 
-        let container = NSView()
+        let container = ToolbarDragContainerView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(button)
         NSLayoutConstraint.activate([

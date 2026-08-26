@@ -31,7 +31,7 @@ extension DocumentWindowController {
         popup.menu = menu
         popup.sizeToFit()
 
-        let container = NSView()
+        let container = ToolbarDragContainerView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(popup)
         NSLayoutConstraint.activate([
