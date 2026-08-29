@@ -48,6 +48,11 @@ extension DocumentWindowController {
     private func rebuildSidebarMenu(_ menu: NSMenu) {
         menu.removeAllItems()
 
+        // NSMenuToolbarItem reserves the first menu item for its button face,
+        // even when the toolbar item supplies its own image. Keep that slot
+        // empty so every real command appears in the dropdown.
+        menu.addItem(NSMenuItem(title: "", action: nil, keyEquivalent: ""))
+
         let hide = NSMenuItem(title: NSLocalizedString("Hide Sidebar", comment: "Sidebar dropdown item"),
                               action: #selector(hideSidebarFromMenu(_:)),
                               keyEquivalent: "")
