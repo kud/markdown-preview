@@ -111,7 +111,7 @@ extension DocumentWindowController {
             hairline.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             hairline.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
-        hairline.isHidden = !activeSchemeThemed
+        hairline.isHidden = !usesThemedChrome
         editAccessoryHairline = hairline
 
         let accessory = NSTitlebarAccessoryViewController()
@@ -125,7 +125,7 @@ extension DocumentWindowController {
         // used instead.
         if #available(macOS 26.1, *) {
             accessory.preferredScrollEdgeEffectStyle =
-                activeSchemeThemed ? .automatic : .hard
+                usesThemedChrome ? .automatic : .hard
         }
         documentWindow.addTitlebarAccessoryViewController(accessory)
         editAccessory = accessory

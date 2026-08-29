@@ -86,7 +86,7 @@ extension DocumentWindowController {
             // Visible bar always gets the hard backdrop; hidden, the
             // preference must not leak a backdrop over a themed titlebar.
             accessory.preferredScrollEdgeEffectStyle =
-                visible || !activeSchemeThemed ? .hard : .automatic
+                visible || !usesThemedChrome ? .hard : .automatic
         }
     }
 
