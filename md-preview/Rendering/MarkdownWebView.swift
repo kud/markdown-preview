@@ -768,6 +768,8 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         }
     }
 
+    /// Seeds the web view with the stored zoom on first load.
+    /// Snaps the stored value to the nearest configured stop.
     func enablePersistentZoom(defaultsKey: String) {
         zoomDefaultsKey = defaultsKey
         guard let stored = UserDefaults.standard.object(forKey: defaultsKey) as? NSNumber else { return }
@@ -780,6 +782,7 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
     /// `enablePersistentZoom` this applies the absent-key case too, so picking
     /// the default size — which clears the key — still resets an already-zoomed
     /// window instead of leaving it where it was.
+    /// Snaps the stored value to the nearest configured stop.
     func applyPersistedZoom() {
         guard let zoomDefaultsKey else { return }
         let stored = UserDefaults.standard.object(forKey: zoomDefaultsKey) as? NSNumber
@@ -823,6 +826,8 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         return max(Self.zoomSteps.first!, min(Self.zoomSteps.last!, value))
     }
 
+    /// Persists the current zoom to UserDefaults, snapping to the nearest
+    /// configured stop so restored zoom always matches a valid step.
     private func persistPageZoom(_ value: CGFloat) {
         guard let zoomDefaultsKey else { return }
         let persistedValue = Self.zoomSteps[Self.zoomStepIndex(for: value)]
