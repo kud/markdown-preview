@@ -825,10 +825,11 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 
     private func persistPageZoom(_ value: CGFloat) {
         guard let zoomDefaultsKey else { return }
-        if abs(value - 1.0) <= 0.001 {
+        let persistedValue = Self.zoomSteps[Self.zoomStepIndex(for: value)]
+        if abs(persistedValue - 1.0) <= 0.001 {
             UserDefaults.standard.removeObject(forKey: zoomDefaultsKey)
         } else {
-            UserDefaults.standard.set(Double(value), forKey: zoomDefaultsKey)
+            UserDefaults.standard.set(Double(persistedValue), forKey: zoomDefaultsKey)
         }
     }
 
