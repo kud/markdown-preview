@@ -771,7 +771,9 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
     func enablePersistentZoom(defaultsKey: String) {
         zoomDefaultsKey = defaultsKey
         guard let stored = UserDefaults.standard.object(forKey: defaultsKey) as? NSNumber else { return }
-        setPageZoom(CGFloat(truncating: stored), persist: false, notifyHeight: false)
+        let rawZoom = CGFloat(truncating: stored)
+        let snappedZoom = Self.zoomSteps[Self.zoomStepIndex(for: rawZoom)]
+        setPageZoom(snappedZoom, persist: false, notifyHeight: false)
     }
 
     /// Re-reads the stored zoom after Settings changes it. Unlike
@@ -781,7 +783,9 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
     func applyPersistedZoom() {
         guard let zoomDefaultsKey else { return }
         let stored = UserDefaults.standard.object(forKey: zoomDefaultsKey) as? NSNumber
-        setPageZoom(stored.map { CGFloat(truncating: $0) } ?? 1.0, persist: false)
+        let rawZoom = stored.map { CGFloat(truncating: $0) } ?? 1.0
+        let snappedZoom = Self.zoomSteps[Self.zoomStepIndex(for: rawZoom)]
+        setPageZoom(snappedZoom, persist: false)
     }
 
     private func nextZoomStep(from current: CGFloat, increasing: Bool) -> CGFloat {

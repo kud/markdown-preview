@@ -31,7 +31,7 @@ struct TextSizeStepper: View {
             Text(selection.displayString)
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
                 .frame(minWidth: 56)
-                .accessibilityLabel(L("Current text size: \(selection.displayString)"))
+                .accessibilityLabel(String.localizedStringWithFormat(L("Current text size: %@"), selection.displayString))
 
             Button {
                 if selection.canStepUp {

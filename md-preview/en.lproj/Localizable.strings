@@ -9,6 +9,7 @@
 "Appearance also applies to Quick Look previews." = "Appearance also applies to Quick Look previews.";
 "Layout" = "Layout";
 "Text size" = "Text size";
+"Current text size: %@" = "Current text size: %@";
 "Size of rendered Markdown in document windows." = "Size of rendered Markdown in document windows.";
 "Small" = "Small";
 "Medium" = "Medium";
