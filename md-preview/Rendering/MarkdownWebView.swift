@@ -718,15 +718,14 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 
     // Discrete zoom stops, mirroring Safari's ⌘+/⌘− cadence. Not private:
     // the toolbar popover draws one dot per stop to show where the current
-    // text size sits on the scale.
-    static let zoomSteps: [CGFloat] = [
-        0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0
-    ]
+    // text size sits on the scale. Owned by `ZoomSteps` so Settings, shortcuts,
+    // pinch and the toolbar share a single source of truth.
+    static var zoomSteps: [CGFloat] { ZoomSteps.values }
 
     /// Which stop `zoom` sits at, for the popover's scale. Values between
     /// stops (a trackpad pinch can leave one) round to the nearest.
     static func zoomStepIndex(for zoom: CGFloat) -> Int {
-        zoomSteps.indices.min { abs(zoomSteps[$0] - zoom) < abs(zoomSteps[$1] - zoom) } ?? 0
+        ZoomSteps.index(for: zoom)
     }
 
     var pageZoom: CGFloat { webView.pageZoom }
@@ -766,7 +765,11 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         if shouldPersistZoom {
             // Settle on the nearest stop so the document, the stored value and
             // the Settings stepper all agree on one size.
-            setPageZoom(Self.zoomSteps[Self.zoomStepIndex(for: webView.pageZoom)])
+            let snappedZoom = Self.zoomSteps[Self.zoomStepIndex(for: webView.pageZoom)]
+            // Persist the snapped stop even if setPageZoom skips the live update
+            // due to the 0.001 tolerance check.
+            persistPageZoom(snappedZoom)
+            setPageZoom(snappedZoom)
         }
     }
 
@@ -825,7 +828,8 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
 
     private func clampedZoom(_ value: CGFloat) -> CGFloat {
         guard value.isFinite else { return 1.0 }
-        return max(Self.zoomSteps.first!, min(Self.zoomSteps.last!, value))
+        let steps = ZoomSteps.values
+        return max(steps.first!, min(steps.last!, value))
     }
 
     /// Persists the current zoom to UserDefaults, snapping to the nearest

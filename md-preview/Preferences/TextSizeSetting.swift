@@ -1,18 +1,18 @@
 //
- //  TextSizeSetting.swift
- //  md-preview
- //
- //  Preferred size for rendered Markdown.
- //
- //  This is not a separate preference from zoom — it is the *same* stored page
- //  zoom that ⌘+ / ⌘− , pinch, and the toolbar's A/A buttons write. Settings
- //  offers a stepper that moves through the same discrete zoom stops the rest
- //  of the app uses, so the stored value always lands on a valid stop.
- //
- //  Base *typography* (`MarkdownHTML.bodyFontSize`) is deliberately left alone:
- //  its derived spacing tokens are shared with the CodeMirror editor bundle, so
- //  scaling there would change editor layout too.
- //
+//  TextSizeSetting.swift
+//  md-preview
+//
+//  Preferred size for rendered Markdown.
+//
+//  This is not a separate preference from zoom — it is the *same* stored page
+//  zoom that ⌘+ / ⌘− , pinch, and the toolbar's A/A buttons write. Settings
+//  offers a stepper that moves through the same discrete zoom stops the rest
+//  of the app uses, so the stored value always lands on a valid stop.
+//
+//  Base *typography* (`MarkdownHTML.bodyFontSize`) is deliberately left alone:
+//  its derived spacing tokens are shared with the CodeMirror editor bundle, so
+//  scaling there would change editor layout too.
+//
 
 import CoreGraphics
 import Foundation
@@ -20,14 +20,14 @@ import Foundation
 /// A precise text size setting that maps to the discrete zoom steps used
 /// throughout the app (keyboard shortcuts, pinch, toolbar). The stepper in
 /// Settings moves one stop at a time, so the stored value is always a member
-/// of `MarkdownWebView.zoomSteps`.
+/// of `ZoomSteps.values`.
 struct TextSizeSetting: Equatable {
     /// Shared with `ContentViewController`, which seeds each web view from it.
     static let defaultsKey = "MarkdownPreview.pageZoom"
 
-    /// The discrete zoom stops. `MarkdownWebView` owns the list so Settings,
-    /// shortcuts, pinch and the toolbar can never offer different stops.
-    static var zoomSteps: [CGFloat] { MarkdownWebView.zoomSteps }
+    /// The discrete zoom stops. Owned by `ZoomSteps` so Settings, shortcuts,
+    /// pinch and the toolbar can never offer different stops.
+    static var zoomSteps: [CGFloat] { ZoomSteps.values }
 
     /// The current zoom level, guaranteed to be a member of `zoomSteps`.
     let zoom: CGFloat
@@ -45,12 +45,12 @@ struct TextSizeSetting: Equatable {
 
     /// The step index of the current zoom level.
     var stepIndex: Int {
-        Self.zoomSteps.firstIndex { abs($0 - zoom) <= 0.001 } ?? 5 // default to 1.0
+        ZoomSteps.index(for: zoom)
     }
 
     /// Snaps a zoom value to the nearest discrete step.
     private static func snapToStep(_ zoom: CGFloat) -> CGFloat {
-        zoomSteps.min { abs($0 - zoom) < abs($1 - zoom) } ?? 1.0
+        ZoomSteps.snap(zoom)
     }
 
     /// The next larger step, or the current one if already at maximum.
