@@ -25,10 +25,9 @@ struct TextSizeSetting: Equatable {
     /// Shared with `ContentViewController`, which seeds each web view from it.
     static let defaultsKey = "MarkdownPreview.pageZoom"
 
-    /// The discrete zoom stops, shared with `MarkdownWebView.zoomSteps`.
-    static let zoomSteps: [CGFloat] = [
-        0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0
-    ]
+    /// The discrete zoom stops. `MarkdownWebView` owns the list so Settings,
+    /// shortcuts, pinch and the toolbar can never offer different stops.
+    static var zoomSteps: [CGFloat] { MarkdownWebView.zoomSteps }
 
     /// The current zoom level, guaranteed to be a member of `zoomSteps`.
     let zoom: CGFloat

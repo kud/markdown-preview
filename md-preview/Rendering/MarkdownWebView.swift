@@ -764,7 +764,9 @@ final class MarkdownWebView: NSView, WKNavigationDelegate {
         accumulatedMagnification = 0
         didMagnifyDuringCurrentGesture = false
         if shouldPersistZoom {
-            persistPageZoom(webView.pageZoom)
+            // Settle on the nearest stop so the document, the stored value and
+            // the Settings stepper all agree on one size.
+            setPageZoom(Self.zoomSteps[Self.zoomStepIndex(for: webView.pageZoom)])
         }
     }
 
