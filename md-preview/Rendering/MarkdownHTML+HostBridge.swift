@@ -567,6 +567,164 @@ nonisolated extension MarkdownHTML {
             post({ kind: 'taskCheckbox', line, checked: box.checked });
         });
         reappliers.push(enableTaskCheckboxes);
+
+        // Resizable table columns (presentation-only): dragging the
+        // boundary between two columns resizes the column on the left.
+        // Widths live in a session-only Map keyed by table index plus
+        // column count, and are re-applied after every MdPreview.update
+        // through the reapplier hook (morphdom wipes inline styles).
+        const tableColumnWidths = new Map();
+        const minColumnWidth = 48;
+        const columnEdgeHotZone = 6;
+        let tableDrag = null;
+        let hotEdgeCell = null;
+
+        function previewTables() {
+            const tables = [];
+            document.querySelectorAll('.markdown-body table').forEach((t) => {
+                if (!t.closest('.md-frontmatter')) tables.push(t);
+            });
+            return tables;
+        }
+        function columnCountOf(table) {
+            let n = 0;
+            for (let i = 0; i < table.rows.length; i += 1) {
+                if (table.rows[i].cells.length > n) n = table.rows[i].cells.length;
+            }
+            return n;
+        }
+        function tableWidthsKey(table, index) {
+            return index + 'x' + columnCountOf(table);
+        }
+        // The cell whose right edge the pointer is hovering, if any.
+        function edgeCellForEvent(event) {
+            const target = event.target;
+            const cell = target instanceof Element ? target.closest('th, td') : null;
+            if (!cell) return null;
+            const table = cell.closest('table');
+            if (!table || !table.closest('.markdown-body')) return null;
+            if (table.closest('.md-frontmatter')) return null;
+            const gap = cell.getBoundingClientRect().right - event.clientX;
+            if (gap < -2 || gap > columnEdgeHotZone) return null;
+            return { cell, table };
+        }
+        function setHotEdgeCell(cell) {
+            if (hotEdgeCell === cell) return;
+            if (hotEdgeCell) hotEdgeCell.classList.remove('md-col-edge');
+            hotEdgeCell = cell;
+            if (hotEdgeCell) hotEdgeCell.classList.add('md-col-edge');
+        }
+        // Conservatively colspan-aware: only cells whose cellIndex
+        // matches and that span exactly one column take the width.
+        function cellsInColumn(table, col) {
+            const out = [];
+            for (let i = 0; i < table.rows.length; i += 1) {
+                const cells = table.rows[i].cells;
+                for (let j = 0; j < cells.length; j += 1) {
+                    if (cells[j].cellIndex === col && (cells[j].colSpan || 1) === 1) {
+                        out.push(cells[j]);
+                    }
+                }
+            }
+            return out;
+        }
+        function clearInlineColumnWidth(cell) {
+            cell.style.width = '';
+            cell.style.minWidth = '';
+            cell.style.maxWidth = '';
+            cell.style.boxSizing = '';
+            cell.classList.remove('md-col-sized');
+            if (cell.getAttribute('style') === '') cell.removeAttribute('style');
+        }
+        function applyColumnWidth(table, col, px) {
+            const value = Math.max(minColumnWidth, Math.round(px)) + 'px';
+            cellsInColumn(table, col).forEach((c) => {
+                c.style.width = value;
+                c.style.minWidth = value;
+                c.style.maxWidth = value;
+                c.style.boxSizing = 'border-box';
+                c.classList.add('md-col-sized');
+            });
+        }
+        function reapplyTableWidths() {
+            const tables = previewTables();
+            for (let i = 0; i < tables.length; i += 1) {
+                const widths = tableColumnWidths.get(tableWidthsKey(tables[i], i));
+                if (!widths) continue;
+                widths.forEach((px, col) => applyColumnWidth(tables[i], col, px));
+            }
+        }
+        function onTableResizeMove(event) {
+            if (!tableDrag) return;
+            const px = Math.max(minColumnWidth,
+                tableDrag.startWidth + event.clientX - tableDrag.startX);
+            applyColumnWidth(tableDrag.table, tableDrag.col, px);
+            let widths = tableColumnWidths.get(tableDrag.key);
+            if (!widths) {
+                widths = new Map();
+                tableColumnWidths.set(tableDrag.key, widths);
+            }
+            widths.set(tableDrag.col, px);
+        }
+        function onTableResizeUp() {
+            tableDrag = null;
+            document.documentElement.classList.remove('md-table-resizing');
+            document.removeEventListener('mousemove', onTableResizeMove);
+            document.removeEventListener('mouseup', onTableResizeUp);
+        }
+        function installTableColumnResizing() {
+            document.addEventListener('mousemove', (event) => {
+                if (tableDrag || event.buttons !== 0) {
+                    if (!tableDrag) setHotEdgeCell(null);
+                    return;
+                }
+                const hit = edgeCellForEvent(event);
+                setHotEdgeCell(hit ? hit.cell : null);
+            });
+            document.addEventListener('mousedown', (event) => {
+                if (event.button !== 0) return;
+                if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return;
+                const hit = edgeCellForEvent(event);
+                if (!hit) return;
+                const index = previewTables().indexOf(hit.table);
+                if (index < 0) return;
+                event.preventDefault();
+                setHotEdgeCell(hit.cell);
+                tableDrag = {
+                    table: hit.table,
+                    key: tableWidthsKey(hit.table, index),
+                    col: hit.cell.cellIndex,
+                    startX: event.clientX,
+                    startWidth: hit.cell.getBoundingClientRect().width
+                };
+                document.documentElement.classList.add('md-table-resizing');
+                document.addEventListener('mousemove', onTableResizeMove);
+                document.addEventListener('mouseup', onTableResizeUp);
+            });
+            document.addEventListener('dblclick', (event) => {
+                const hit = edgeCellForEvent(event);
+                if (!hit) return;
+                const index = previewTables().indexOf(hit.table);
+                if (index < 0) return;
+                event.preventDefault();
+                const key = tableWidthsKey(hit.table, index);
+                if (event.altKey) {
+                    tableColumnWidths.delete(key);
+                    for (let i = 0; i < hit.table.rows.length; i += 1) {
+                        const cells = hit.table.rows[i].cells;
+                        for (let j = 0; j < cells.length; j += 1) {
+                            if ((cells[j].colSpan || 1) === 1) clearInlineColumnWidth(cells[j]);
+                        }
+                    }
+                    return;
+                }
+                const widths = tableColumnWidths.get(key);
+                if (widths) widths.delete(hit.cell.cellIndex);
+                cellsInColumn(hit.table, hit.cell.cellIndex).forEach(clearInlineColumnWidth);
+            });
+            window.MdPreview.registerReapplier(reapplyTableWidths);
+            reapplyTableWidths();
+        }
         function mdHash(s) {
             let h = 5381;
             for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
@@ -769,6 +927,7 @@ nonisolated extension MarkdownHTML {
             perfLog('start (DOM ready)');
             populateFromTemplate();
             decorateCodeBlocks();
+            installTableColumnResizing();
             pushHeight();
             try {
                 const ro = new ResizeObserver(pushHeight);
