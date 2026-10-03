@@ -732,6 +732,16 @@ nonisolated extension MarkdownHTML {
     :is(th, td)[align="center"] { text-align: center; }
     :is(th, td)[align="right"] { text-align: right; }
     :is(th, td)[align="left"] { text-align: left; }
+    /* Resizable table columns (presentation-only): applied inline per
+       column by the host bridge script. Sized cells need `overflow-wrap`
+       so content can shrink below its natural width; the drag class on
+       <html> keeps the cursor and blocks selection mid-drag. */
+    .md-col-sized { overflow-wrap: anywhere; }
+    .md-col-edge { cursor: col-resize; }
+    .md-table-resizing, .md-table-resizing * {
+        cursor: col-resize !important;
+        user-select: none;
+    }
 
     hr {
         border: 0;
